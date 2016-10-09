@@ -27,12 +27,12 @@ func (a byMinY) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a byMinX) Less(i, j int) bool { return a[i].MinX < a[j].MinX }
 func (a byMinY) Less(i, j int) bool { return a[i].MinY < a[j].MinY }
 
-func sortByMinX(nodes []*node) {
-	sort.Sort(byMinX(nodes))
+func sortByMinX(nodes *[]*node) {
+	sort.Sort(byMinX(*nodes))
 }
 
-func sortByMinY(nodes []*node) {
-	sort.Sort(byMinY(nodes))
+func sortByMinY(nodes *[]*node) {
+	sort.Sort(byMinY(*nodes))
 }
 
 func (node *node) calcBBox() {
@@ -114,9 +114,9 @@ func createNode(children []*node) *node {
 
 func allDistMargin(_node *node, m, M int, prop string) float64 {
 	if prop == "x" {
-		sortByMinX(_node.children)
+		sortByMinX(&_node.children)
 	} else {
-		sortByMinY(_node.children)
+		sortByMinY(&_node.children)
 	}
 
 	leftBBox := createNode([]*node{})

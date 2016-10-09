@@ -121,14 +121,14 @@ func (rbush *RBush) insert(item *node, level int) {
 
 	for level >= 0 {
 		if len(insertPath[level].children) > maxEntriesInt {
-			rbush.split(insertPath, level)
+			rbush.split(insertPath, &level)
 			level--
 		} else {
 			break
 		}
 	}
 
-	rbush.adjustParentBBoxes(item, insertPath, level)
+	rbush.adjustParentBBoxes(item, &insertPath, &level)
 }
 
 func (rbush *RBush) Search(box *Box) []*Box {
@@ -190,14 +190,14 @@ func (rbush *RBush) all(item *node, result *[]*Box) *[]*Box {
 	return result
 }
 
-func (rbush *RBush) adjustParentBBoxes(item *node, path []*node, level int) {
-	for i := level; i >= 0; i-- {
-		path[i].extend(item)
+func (rbush *RBush) adjustParentBBoxes(item *node, path *[]*node, level *int) {
+	for i := *level; i >= 0; i-- {
+		(*path)[i].extend(item)
 	}
 }
 
-func (rbush *RBush) split(path []*node, level int) {
-	_node := path[level]
+func (rbush *RBush) split(path []*node, level *int) {
+	_node := path[*level]
 	M := len(_node.children)
 	m := int(rbush.minEntries)
 
@@ -205,18 +205,22 @@ func (rbush *RBush) split(path []*node, level int) {
 	splitIndex := chooseSplitIndex(_node, m, M)
 
 	nodeCopy := make([]*node, len(_node.children)-splitIndex)
-	copy(nodeCopy, _node.children[splitIndex:len(_node.children)])
+	copy(nodeCopy, _node.children[splitIndex:])
 	newNode := createNode(nodeCopy)
 	newNode.height = _node.height
 	newNode.leaf = _node.leaf
 
+  llen := len(_node.children)
+  for i:=splitIndex; i < llen; i++ {
+    _node.children[i] = nil
+  }
 	_node.children = _node.children[:splitIndex]
 
 	_node.calcBBox()
 	newNode.calcBBox()
 
-	if level > 0 {
-		child := &path[level-1].children
+	if *level > 0 {
+		child := &path[*level-1].children
 		*child = append(*child, newNode)
 	} else {
 		rbush.splitRoot(_node, newNode)
@@ -228,7 +232,7 @@ func (rbush *RBush) chooseSplitAxis(_node *node, m, M int) {
 	yMargin := allDistMargin(_node, m, M, "y")
 
 	if xMargin < yMargin {
-		sortByMinX(_node.children)
+		sortByMinX(&_node.children)
 	}
 }
 
