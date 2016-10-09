@@ -11,7 +11,7 @@ import (
 type RBush struct {
 	maxEntries float64
 	minEntries float64
-	data *node
+	data       *node
 }
 
 func NewRBush(maxEntries float64) RBush {
@@ -22,26 +22,26 @@ func NewRBush(maxEntries float64) RBush {
 	return RBush{
 		maxEntries: math.Max(4.0, maxEntries),
 		minEntries: math.Max(2.0, math.Ceil(maxEntries*0.4)),
-		data: createNode([]*node{}),
+		data:       createNode([]*node{}),
 	}
 }
 
-func (rbush *RBush) Load(data []Box){
+func (rbush *RBush) Load(data []Box) {
 	l := len(data)
 	if l < int(rbush.minEntries) {
-		for i := 0; i < l; i++{
+		for i := 0; i < l; i++ {
 			rbush.InsertBox(&data[i])
 		}
 		return
 	}
 
-	right := l-1
+	right := l - 1
 	_node := rbush.build(copySliceBox(data), 0, 0.0, right, float64(right), 0)
 	if len(rbush.data.children) == 0 {
 		rbush.data = _node
-	}else if rbush.data.height == _node.height {
+	} else if rbush.data.height == _node.height {
 		rbush.splitRoot(rbush.data, _node)
-	}else{
+	} else {
 		if rbush.data.height < _node.height {
 			tmpNode := rbush.data
 			rbush.data = _node
@@ -52,30 +52,30 @@ func (rbush *RBush) Load(data []Box){
 	}
 }
 
-func (rbush *RBush) build(items []Box, left int, lf float64, right int, rf float64, height int) *node{
+func (rbush *RBush) build(items []Box, left int, lf float64, right int, rf float64, height int) *node {
 	var _node *node
 
-	N := rf-lf+1
+	N := rf - lf + 1
 	M := rbush.maxEntries
 
 	if N <= M {
-		_node = createNode(boxToNodes(items[left:right+1]))
+		_node = createNode(boxToNodes(items[left : right+1]))
 		_node.calcBBox()
 		return _node
 	}
 
-	if height == 0{
-		heightFloat := math.Ceil(math.Log(N)/math.Log(M))
+	if height == 0 {
+		heightFloat := math.Ceil(math.Log(N) / math.Log(M))
 		height = int(heightFloat)
 
-		M = math.Ceil(N/math.Pow(M, heightFloat-1))
+		M = math.Ceil(N / math.Pow(M, heightFloat-1))
 	}
 
 	_node = createNode([]*node{})
 	_node.leaf = false
 	_node.height = height
 
-	N2 := math.Ceil(N/M)
+	N2 := math.Ceil(N / M)
 	N1 := N2 * math.Ceil(math.Sqrt(M))
 
 	var right2, right3 float64
@@ -97,20 +97,20 @@ func (rbush *RBush) build(items []Box, left int, lf float64, right int, rf float
 	return _node
 }
 
-func (rbush *RBush) splitRoot(_node *node, newNode *node){
+func (rbush *RBush) splitRoot(_node *node, newNode *node) {
 	rbush.data = createNode([]*node{_node, newNode})
-	rbush.data.height = _node.height+1
+	rbush.data.height = _node.height + 1
 	rbush.data.leaf = false
 	rbush.data.calcBBox()
 }
 
-func (rbush *RBush) InsertBox(box *Box){
+func (rbush *RBush) InsertBox(box *Box) {
 	_node := createNode([]*node{})
 	_node.copyBox(box)
 	rbush.insert(_node, rbush.data.height-1)
 }
 
-func (rbush *RBush) insert(item *node, level int){
+func (rbush *RBush) insert(item *node, level int) {
 	insertPath := []*node{}
 	_node := rbush.chooseSubtree(item, rbush.data, level, &insertPath)
 
@@ -123,7 +123,7 @@ func (rbush *RBush) insert(item *node, level int){
 		if len(insertPath[level].children) > maxEntriesInt {
 			rbush.split(insertPath, level)
 			level--
-		}else{
+		} else {
 			break
 		}
 	}
@@ -135,7 +135,7 @@ func (rbush *RBush) Search(box *Box) []*Box {
 	_node := rbush.data
 	result := []*Box{}
 
-	if !intersects(box, _node){
+	if !intersects(box, _node) {
 		return result
 	}
 
@@ -146,21 +146,21 @@ func (rbush *RBush) Search(box *Box) []*Box {
 		for i := 0; i < ll; i++ {
 			child := _node.children[i]
 
-			if intersects(box, child){
+			if intersects(box, child) {
 				if _node.leaf {
 					result = append(result, child.box)
-				}else if contains(box, child) {
+				} else if contains(box, child) {
 					rbush.all(child, &result)
-				}else{
+				} else {
 					nodesToSearch = append(nodesToSearch, child)
 				}
 			}
 		}
 
-		if len(nodesToSearch) != 0{
+		if len(nodesToSearch) != 0 {
 			_node, nodesToSearch = nodesToSearch[len(nodesToSearch)-1], nodesToSearch[:len(nodesToSearch)-1]
-		}else{
-			break;
+		} else {
+			break
 		}
 	}
 
@@ -176,13 +176,13 @@ func (rbush *RBush) all(item *node, result *[]*Box) *[]*Box {
 			for i := 0; i < len(item.children); i++ {
 				*result = append(*result, item.children[i].box)
 			}
-		}else{
+		} else {
 			nodesToSearch = append(nodesToSearch, item.children...)
 		}
 
-		if len(nodesToSearch) != 0{
+		if len(nodesToSearch) != 0 {
 			item, nodesToSearch = nodesToSearch[len(nodesToSearch)-1], nodesToSearch[:len(nodesToSearch)-1]
-		}else{
+		} else {
 			break
 		}
 	}
@@ -190,13 +190,13 @@ func (rbush *RBush) all(item *node, result *[]*Box) *[]*Box {
 	return result
 }
 
-func (rbush *RBush) adjustParentBBoxes(item *node, path []*node, level int){
+func (rbush *RBush) adjustParentBBoxes(item *node, path []*node, level int) {
 	for i := level; i >= 0; i-- {
 		path[i].extend(item)
 	}
 }
 
-func (rbush *RBush) split(path []*node, level int){
+func (rbush *RBush) split(path []*node, level int) {
 	_node := path[level]
 	M := len(_node.children)
 	m := int(rbush.minEntries)
@@ -215,25 +215,24 @@ func (rbush *RBush) split(path []*node, level int){
 	_node.calcBBox()
 	newNode.calcBBox()
 
-
 	if level > 0 {
 		child := &path[level-1].children
 		*child = append(*child, newNode)
-	}else{
+	} else {
 		rbush.splitRoot(_node, newNode)
 	}
 }
 
-func (rbush *RBush) chooseSplitAxis(_node *node, m, M int){
+func (rbush *RBush) chooseSplitAxis(_node *node, m, M int) {
 	xMargin := allDistMargin(_node, m, M, "x")
 	yMargin := allDistMargin(_node, m, M, "y")
 
-	if(xMargin < yMargin){
+	if xMargin < yMargin {
 		sortByMinX(_node.children)
 	}
 }
 
-func (rbush *RBush) chooseSubtree(item *node, _node *node, level int, path *[]*node) *node{
+func (rbush *RBush) chooseSubtree(item *node, _node *node, level int, path *[]*node) *node {
 	var (
 		targetNode *node
 	)
@@ -264,7 +263,7 @@ func (rbush *RBush) chooseSubtree(item *node, _node *node, level int, path *[]*n
 				}
 				targetNode = child
 				definedNode = true
-			}else if enlargement == minEnlargement {
+			} else if enlargement == minEnlargement {
 				if area < minArea {
 					minArea = area
 					targetNode = child
@@ -276,7 +275,7 @@ func (rbush *RBush) chooseSubtree(item *node, _node *node, level int, path *[]*n
 
 		if definedNode {
 			_node = targetNode
-		}else{
+		} else {
 			_node = _node.children[0]
 		}
 
@@ -285,11 +284,11 @@ func (rbush *RBush) chooseSubtree(item *node, _node *node, level int, path *[]*n
 	return _node
 }
 
-func (rbush *RBush) Clear(){
+func (rbush *RBush) Clear() {
 	rbush.data = createNode([]*node{})
 }
 
-func multiselect(arr []Box, left float64, right float64, n float64, compare callback){
+func multiselect(arr []Box, left float64, right float64, n float64, compare callback) {
 	stack := []float64{left, right}
 
 	for len(stack) > 0 {
@@ -300,13 +299,13 @@ func multiselect(arr []Box, left float64, right float64, n float64, compare call
 			continue
 		}
 
-		mid := left+math.Ceil((right-left) / n/2) * n
+		mid := left + math.Ceil((right-left)/n/2)*n
 		QuickSelect(arr, int(mid), int(left), int(right), compare)
 		stack = append(stack, left, mid, mid, right)
 	}
 }
 
-func copySliceBox(arr []Box) []Box{
+func copySliceBox(arr []Box) []Box {
 	arr2 := make([]Box, len(arr))
 	copy(arr2, arr)
 	return arr2

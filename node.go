@@ -14,31 +14,32 @@ type node struct {
 	height                 int
 	leaf                   bool
 	MinX, MaxX, MinY, MaxY float64
-	box 									 *Box
+	box                    *Box
 }
 
 type byMinX []*node
 type byMinY []*node
-func (a byMinX) Len() int {return len(a)}
-func (a byMinY) Len() int {return len(a)}
-func (a byMinX) Swap(i, j int) {a[i], a[j] = a[j], a[i]}
-func (a byMinY) Swap(i, j int) {a[i], a[j] = a[j], a[i]}
-func (a byMinX) Less(i, j int) bool {return a[i].MinX < a[j].MinX}
-func (a byMinY) Less(i, j int) bool {return a[i].MinY < a[j].MinY}
 
-func sortByMinX(nodes []*node){
+func (a byMinX) Len() int           { return len(a) }
+func (a byMinY) Len() int           { return len(a) }
+func (a byMinX) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a byMinY) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a byMinX) Less(i, j int) bool { return a[i].MinX < a[j].MinX }
+func (a byMinY) Less(i, j int) bool { return a[i].MinY < a[j].MinY }
+
+func sortByMinX(nodes []*node) {
 	sort.Sort(byMinX(nodes))
 }
 
-func sortByMinY(nodes []*node){
+func sortByMinY(nodes []*node) {
 	sort.Sort(byMinY(nodes))
 }
 
-func (node *node) calcBBox(){
+func (node *node) calcBBox() {
 	node.distBBox(node, 0, len(node.children))
 }
 
-func (destNode *node) distBBox(node *node, k int, p int){
+func (destNode *node) distBBox(node *node, k int, p int) {
 	destNode.MinX = math.Inf(1)
 	destNode.MinY = math.Inf(1)
 	destNode.MaxX = math.Inf(-1)
@@ -49,12 +50,11 @@ func (destNode *node) distBBox(node *node, k int, p int){
 	}
 }
 
-
-func (node *node) extend(b *node){
-	node.MinX = math.Min(node.MinX, b.MinX);
-	node.MinY = math.Min(node.MinY, b.MinY);
-	node.MaxX = math.Max(node.MaxX, b.MaxX);
-	node.MaxY = math.Max(node.MaxY, b.MaxY);
+func (node *node) extend(b *node) {
+	node.MinX = math.Min(node.MinX, b.MinX)
+	node.MinY = math.Min(node.MinY, b.MinY)
+	node.MaxX = math.Max(node.MaxX, b.MaxX)
+	node.MaxY = math.Max(node.MaxY, b.MaxY)
 }
 
 func compareNodeMinX(a, b *Box) float64 {
@@ -65,12 +65,12 @@ func compareNodeMinY(a, b *Box) float64 {
 	return a.MinY - b.MinY
 }
 
-func bboxArea(a *node) float64{
+func bboxArea(a *node) float64 {
 	return (a.MaxX - a.MinX) * (a.MaxY - a.MinY)
 }
 
-func bboxMargin(a *node) float64{
-	return (a.MaxX - a.MinX) + (a.MaxY - a.MinY)
+func bboxMargin(a *node) float64 {
+	return a.MaxX - a.MinX + (a.MaxY - a.MinY)
 }
 
 func enlargedArea(a, b *node) float64 {
@@ -84,38 +84,38 @@ func contains(a *Box, b *node) bool {
 		b.MaxY <= a.MaxY
 }
 
-func intersects(a *Box, b *node) bool{
+func intersects(a *Box, b *node) bool {
 	return b.MinX <= a.MaxX &&
 		b.MinY <= a.MaxY &&
 		b.MaxX >= a.MinX &&
 		b.MaxY >= a.MinY
 }
 
-func intersectionArea(a,b *node) float64 {
-	minX := math.Max(a.MinX, b.MinX);
-	minY := math.Max(a.MinY, b.MinY);
-	maxX := math.Min(a.MaxX, b.MaxX);
-	maxY := math.Min(a.MaxY, b.MaxY);
+func intersectionArea(a, b *node) float64 {
+	minX := math.Max(a.MinX, b.MinX)
+	minY := math.Max(a.MinY, b.MinY)
+	maxX := math.Min(a.MaxX, b.MaxX)
+	maxY := math.Min(a.MaxY, b.MaxY)
 
-	return math.Max(0, maxX - minX) * math.Max(0, maxY - minY)
+	return math.Max(0, maxX-minX) * math.Max(0, maxY-minY)
 }
 
-func createNode(children []*node) *node{
+func createNode(children []*node) *node {
 	return &node{
 		children: children,
-		height: 1,
-		leaf: true,
-		MinX: math.Inf(1),
-		MinY: math.Inf(1),
-		MaxX: math.Inf(-1),
-		MaxY: math.Inf(-1),
+		height:   1,
+		leaf:     true,
+		MinX:     math.Inf(1),
+		MinY:     math.Inf(1),
+		MaxX:     math.Inf(-1),
+		MaxY:     math.Inf(-1),
 	}
 }
 
-func allDistMargin(_node *node, m, M int, prop string) float64{
-	if prop == "x"{
+func allDistMargin(_node *node, m, M int, prop string) float64 {
+	if prop == "x" {
 		sortByMinX(_node.children)
-	}else{
+	} else {
 		sortByMinY(_node.children)
 	}
 
@@ -134,7 +134,7 @@ func allDistMargin(_node *node, m, M int, prop string) float64{
 		margin += bboxMargin(leftBBox)
 	}
 
-	for i := (M-m-1); i >= m; i-- {
+	for i := M - m - 1; i >= m; i-- {
 		child = _node.children[i]
 		rightBBox.extend(child)
 		margin += bboxMargin(rightBBox)
@@ -143,11 +143,10 @@ func allDistMargin(_node *node, m, M int, prop string) float64{
 	return margin
 }
 
-func chooseSplitIndex(_node *node, m, M int) int{
+func chooseSplitIndex(_node *node, m, M int) int {
 	var bbox1, bbox2 *node
 	var overlap, area float64
 	var i, index int
-
 
 	minOverlap := math.Inf(1)
 	minArea := math.Inf(1)
@@ -168,7 +167,7 @@ func chooseSplitIndex(_node *node, m, M int) int{
 			if area < minArea {
 				minArea = area
 			}
-		}else if overlap == minOverlap {
+		} else if overlap == minOverlap {
 			if area < minArea {
 				minArea = area
 				index = i
@@ -178,7 +177,7 @@ func chooseSplitIndex(_node *node, m, M int) int{
 	return index
 }
 
-func (_node *node) copyBox(box *Box){
+func (_node *node) copyBox(box *Box) {
 	_node.MinX = box.MinX
 	_node.MinY = box.MinY
 	_node.MaxX = box.MaxX
@@ -186,10 +185,10 @@ func (_node *node) copyBox(box *Box){
 	_node.box = box
 }
 
-func boxToNodes(arr []Box) []*node{
+func boxToNodes(arr []Box) []*node {
 	var _n *node
 	nodes := []*node{}
-	for i:=0; i < len(arr); i++{
+	for i := 0; i < len(arr); i++ {
 		_n = createNode([]*node{})
 		_n.copyBox(&arr[i])
 		nodes = append(nodes, _n)
