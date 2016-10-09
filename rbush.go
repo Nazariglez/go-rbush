@@ -158,7 +158,9 @@ func (rbush *RBush) Search(box *Box) []*Box {
 		}
 
 		if len(nodesToSearch) != 0 {
-			_node, nodesToSearch = nodesToSearch[len(nodesToSearch)-1], nodesToSearch[:len(nodesToSearch)-1]
+			_node = nodesToSearch[len(nodesToSearch)-1]
+			nodesToSearch[len(nodesToSearch)-1] = nil
+			nodesToSearch = nodesToSearch[:len(nodesToSearch)-1]
 		} else {
 			break
 		}
@@ -181,7 +183,9 @@ func (rbush *RBush) all(item *node, result *[]*Box) *[]*Box {
 		}
 
 		if len(nodesToSearch) != 0 {
-			item, nodesToSearch = nodesToSearch[len(nodesToSearch)-1], nodesToSearch[:len(nodesToSearch)-1]
+      item = nodesToSearch[len(nodesToSearch)-1]
+      nodesToSearch[len(nodesToSearch)-1] = nil
+			nodesToSearch = nodesToSearch[:len(nodesToSearch)-1]
 		} else {
 			break
 		}
@@ -210,10 +214,10 @@ func (rbush *RBush) split(path []*node, level *int) {
 	newNode.height = _node.height
 	newNode.leaf = _node.leaf
 
-  llen := len(_node.children)
-  for i:=splitIndex; i < llen; i++ {
-    _node.children[i] = nil
-  }
+	llen := len(_node.children)
+	for i := splitIndex; i < llen; i++ {
+		_node.children[i] = nil
+	}
 	_node.children = _node.children[:splitIndex]
 
 	_node.calcBBox()
@@ -238,7 +242,8 @@ func (rbush *RBush) chooseSplitAxis(_node *node, m, M int) {
 
 func (rbush *RBush) chooseSubtree(item *node, _node *node, level int, path *[]*node) *node {
 	var (
-		targetNode *node
+		targetNode, child *node
+    area, enlargement, minArea, minEnlargement float64
 	)
 
 	definedNode := false
@@ -250,15 +255,15 @@ func (rbush *RBush) chooseSubtree(item *node, _node *node, level int, path *[]*n
 			break
 		}
 
-		minArea := math.Inf(1)
-		minEnlargement := math.Inf(1)
+		minArea = math.Inf(1)
+		minEnlargement = math.Inf(1)
 
 		ll := len(_node.children)
 		for i := 0; i < ll; i++ {
 
-			child := _node.children[i]
-			area := bboxArea(child)
-			enlargement := enlargedArea(item, child) - area
+			child = _node.children[i]
+			area = bboxArea(child)
+			enlargement = enlargedArea(item, child) - area
 
 			if enlargement < minEnlargement {
 				minEnlargement = enlargement
